@@ -49,6 +49,30 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 				return "", err
 			}
 			return intValue, nil
+		} else if bencodedString[0] == 'l' {
+			// Handle list
+			var list []interface{}
+			i := 1
+			for i < len(bencodedString)-1 {
+				value, err := decodeBencode(bencodedString[i:])
+				if err != nil {
+					return nil, err
+				}
+				list = append(list, value)
+
+				// Update `i` to move past the decoded value
+				// Assuming `value` is a string, integer, or list, calculate its length
+				switch v := value.(type) {
+				case string:
+					i += len(v) + len(strconv.Itoa(len(v))) + 1 // length prefix + colon
+				case int:
+					i += len(strconv.Itoa(v)) + 2 // 'i' + number + 'e'
+				default:
+					return "", fmt.Errorf("Invalid type in list")
+				}
+				fmt.Println("List detected", value, "i ", i)
+			}
+			return list, nil
 		} else {
 			return "", fmt.Errorf("Invalid bencoded string")
 		}
